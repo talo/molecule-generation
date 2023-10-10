@@ -1,6 +1,8 @@
+import json
 from io import StringIO, BytesIO
 from typing import Any
 
+import numpy as np
 from openbabel import pybel
 from rdkit import Chem
 
@@ -8,6 +10,13 @@ from rdkit import Chem
 RDKitMol = Any
 PybelMol = Any
 
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+    
 
 def rdkit_mol_to_sdf_string(rdkit_mol: RDKitMol) -> str:
     """
