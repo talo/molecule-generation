@@ -4,6 +4,3 @@ __pycache__/
 # Package installation:
 .eggs/
 *.egg-info/
-
-# Model checkpoints:
-*_best.pkl
