@@ -20,3 +20,8 @@ dependencies:
     # then do python3 setup.py install, this will work as long as you already have openbabel working via a separate method (not pip)
     # - plip
     - alphaspace2
+    - loguru
+    - tqdm
+    - pandas
+    # to read prelude excel file with pandas
+    - openpyxl
