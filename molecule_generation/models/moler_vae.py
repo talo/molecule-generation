@@ -71,7 +71,8 @@ class MoLeRVae(MoLeRBaseModel):
                 "latent_repr_mlp_layers": [512, 512],
                 "latent_repr_num_heads": 32,
                 "latent_repr_dropout_rate": 0.0,
-                "latent_sample_strategy": "per_graph",  # one of passthrough, per_graph, or per_partial_graph
+                # "latent_sample_strategy": "per_graph",  # one of passthrough, per_graph, or per_partial_graph
+                "latent_sample_strategy": "passthrough",
                 # Property prediction hyperparameters:
                 "property_predictor_mlp_layers": [64, 32],
                 "property_predictor_mlp_dropout_rate": 0.0,
@@ -88,7 +89,9 @@ class MoLeRVae(MoLeRBaseModel):
     def __init__(self, params: Dict[str, Any], dataset: TraceDataset, **kwargs):
         super().__init__(params, dataset, **kwargs)
 
-        self._latent_sample_strategy = params["latent_sample_strategy"]
+        # self._latent_sample_strategy = params["latent_sample_strategy"]
+        self._latent_sample_strategy = "passthrough"
+        # print(f"Using latent sample strategy {self._latent_sample_strategy}")
 
         # ===== Prepare sub-layers, which will be actually created in .build().
         # Layer from per-node encoder GNN results to per-graph representation:
@@ -297,26 +300,26 @@ class MoLeRVae(MoLeRBaseModel):
         graph_log_variance = graph_mean_and_log_variance[:, self.latent_dim :]  # Shape: [V, MD]
 
         # result_representations: shape [PG, MD]
-        if self._latent_sample_strategy == "passthrough":
-            result_representations = tf.gather(graph_mean, partial_graph_to_original_graph_map)
-        elif self._latent_sample_strategy == "per_graph":
-            standard_noise = tf.random.truncated_normal(shape=tf.shape(graph_mean))
-            noise = tf.sqrt(tf.exp(graph_log_variance)) * standard_noise
-            samples = graph_mean + noise
-            result_representations = tf.gather(samples, partial_graph_to_original_graph_map)
-        elif self._latent_sample_strategy == "per_partial_graph":
-            standard_deviation = tf.sqrt(tf.exp(graph_log_variance))
-            partial_graph_mean = tf.gather(graph_mean, partial_graph_to_original_graph_map)
-            node_sd = tf.gather(standard_deviation, partial_graph_to_original_graph_map)
-            standard_noise = tf.random.truncated_normal(shape=tf.shape(partial_graph_mean))
-            noise = node_sd * standard_noise
-            result_representations = partial_graph_mean + noise
-        else:
-            raise ValueError(
-                f"Expected sample strategy to be one of "
-                f"passthrough, per_graph, or per_partial_graph."
-                f"Received: {self._latent_sample_strategy}"
-            )
+        # if self._latent_sample_strategy == "passthrough":
+        result_representations = tf.gather(graph_mean, partial_graph_to_original_graph_map)
+        # elif self._latent_sample_strategy == "per_graph":
+        #     standard_noise = tf.random.truncated_normal(shape=tf.shape(graph_mean))
+        #     noise = tf.sqrt(tf.exp(graph_log_variance)) * standard_noise
+        #     samples = graph_mean + noise
+        #     result_representations = tf.gather(samples, partial_graph_to_original_graph_map)
+        # elif self._latent_sample_strategy == "per_partial_graph":
+        #     standard_deviation = tf.sqrt(tf.exp(graph_log_variance))
+        #     partial_graph_mean = tf.gather(graph_mean, partial_graph_to_original_graph_map)
+        #     node_sd = tf.gather(standard_deviation, partial_graph_to_original_graph_map)
+        #     standard_noise = tf.random.truncated_normal(shape=tf.shape(partial_graph_mean))
+        #     noise = node_sd * standard_noise
+        #     result_representations = partial_graph_mean + noise
+        # else:
+        #     raise ValueError(
+        #         f"Expected sample strategy to be one of "
+        #         f"passthrough, per_graph, or per_partial_graph."
+        #         f"Received: {self._latent_sample_strategy}"
+        #     )
 
         return graph_mean, graph_log_variance, result_representations
 
