@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import string
@@ -239,9 +240,9 @@ def dock_and_get_interactions(
     mol_with_Hs.UpdatePropertyCache()  # needed before embed
     embed_status = AllChem.EmbedMolecule(mol_with_Hs, randomSeed=seed, maxAttempts=500)
     if embed_status == -1:  # failed, try again with random coords
-        params = AllChem.ETKDGv2()
-        params.useRandomCoords = True
-        embed_status = AllChem.EmbedMolecule(mol_with_Hs, params, randomSeed=seed, maxAttempts=500)
+        # params = AllChem.ETKDGv2()
+        # params.useRandomCoords = True
+        embed_status = AllChem.EmbedMolecule(mol_with_Hs, useRandomCoords=True, randomSeed=seed, maxAttempts=500)
         if embed_status == -1:  # failed again, return score of 0
             return 0
     
@@ -337,22 +338,26 @@ def ic50_str_to_float(ic50_str: str) -> float:
         return float(ic50_str)
     
 
-def optimise():
-    np.random.seed(1337)
-    random.seed(1337)
-    os.environ["PYTHONHASHSEED"] = str(1337)
+def optimise(args):
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+    os.environ["PYTHONHASHSEED"] = str(args.seed)
 
     time_hash = int(time.time())
 
     # run_name = "50particles_5rounds_test_v1"  # PRT1009303
     # run_name = "100parts_10steps_5res_5poses_8exh_v1_PRT1008447"
-    run_name = "TEST_100parts_10steps_5res_5poses_8exh_v1_top100PRTs"
-    num_parts = 3
+    # run_name = "100parts_10steps_5res_5poses_8exh_v1_top100PRTs"
+    run_name = args.run_name
+    num_parts = args.num_particles
+    # num_parts = 100
 
     # smiles & scaffold to initialise
-    scaffold = "CNC(=O)C1=C(NC2=CC=CC=C2OC)C=C(NC(=O)C2CC2)N=N1"
+    # "CNC(=O)C1=C(NC2=CC=CC=C2OC)C=C(NC(=O)C2CC2)N=N1"
+    scaffold = args.scaffold
 
-    xl_file = pd.read_excel("/home/minhtoo/molecule-generation/data/JAK2_IC50_data_Sep18.xlsx", sheet_name=None)
+    # read Prelude Excel file
+    xl_file = pd.read_excel(args.ref_smi_excel_path, sheet_name=None)
     df = xl_file["browser export"]
     df["IC50_NM_JH2_V617F"] = df["IC50_NM_JH2_V617F"].map(ic50_str_to_float)
     df = df.sort_values(by="IC50_NM_JH2_V617F")  # ascending IC50, from lowest (strongest binder) to highest (weakest binder)
@@ -364,27 +369,30 @@ def optimise():
     # init_smiles = "CNC(=O)c1nnc(cc1Nc1cccc(c1OC)-c1cnn(c1)C1CN(C1)Cc1ccccn1)NC(=O)C1CC1"  # PRT1008447
 
     # define oracle
-    protein_pdb_path = Path("/home/minhtoo/molecule-generation/data/mutant_PRT1008596.align.fixed.addH.pdb")
-    autobox_ligand_path = Path("/home/minhtoo/molecule-generation/data/PRT1008596.sdf")
+    protein_pdb_path = args.protein_pdb_path  
+    # Path("/home/minhtoo/molecule-generation/data/mutant_PRT1008596.align.fixed.addH.pdb")
+    autobox_ligand_path = args.autobox_ligand_path 
+    # Path("/home/minhtoo/molecule-generation/data/PRT1008596.sdf")
     dock_and_get_interactions_fn = partial(
         dock_and_get_interactions,
         protein_pdb_path=protein_pdb_path,
         autobox_ligand_path=autobox_ligand_path,
-        residues_of_interest={
-            "VAL629", "ARG715", "TRP718", "THR555", "CYS675", 
+        residues_of_interest=set(args.residues_of_interest),
+        # {
+        #    "VAL629", "ARG715", "TRP718", "THR555", "CYS675", 
             # "LYS581", "GLN626", "LYS677", "SER698",
-        },
-        necessary_residues={"VAL629"},
-        exhaustiveness=8,
-        seed=1337,
-        num_poses=5,
-        temp_dir=Path(f"/home/minhtoo/molecule-generation/temp_dirs/moler_oracle_temp_{run_name}_{time_hash}/")
+        # },
+        necessary_residues=set(args.necessary_residues), # {"VAL629"},
+        exhaustiveness=args.docking_exhaustiveness,
+        seed=args.seed,
+        num_poses=args.num_poses,
+        temp_dir=args.temp_folder / f"moler_oracle_temp_{run_name}_{time_hash}"
     )
     # TODO: add batched GNINA docking fn, but need to refactor mso quite a lot
     scoring_functions = [ScoringFunction(func=dock_and_get_interactions_fn, name="interactions", is_mol_func=True)]
 
-    out_dir = Path(f"/home/minhtoo/molecule-generation/results/{run_name}_{time_hash}/")
-    model_dir = Path("/home/minhtoo/molecule-generation/models/")
+    out_dir = args.out_folder / f"{run_name}_{time_hash}/"
+    model_dir = args.traine_model_folder  # Path("models/")
     with load_model_from_directory(model_dir) as model:
         infer_model = MoLeRModel(model, scaffold, debug=True)
 
@@ -395,7 +403,7 @@ def optimise():
             inference_model=infer_model,
             scoring_functions=scoring_functions
         )
-        opt.run(10, num_track=1_000_000, out_dir=out_dir)
+        opt.run(10, num_track=100_000_000, out_dir=out_dir)
 
     logger.success('best solutions')
     logger.success(opt.best_solutions)
@@ -404,4 +412,64 @@ def optimise():
 
 
 if __name__ == "__main__":
-    optimise()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run_name", type=str)
+    parser.add_argument("--scaffold", type=str, help="SMILES of scaffold to use for all generations")
+    # Path("/home/minhtoo/molecule-generation/data/JAK2_IC50_data_Sep18.xlsx")
+    parser.add_argument(
+        "--ref_smi_excel_path", type=Path, help="Path to excel file containing SMILES of Prelude's reference molecules."
+    )
+    parser.add_argument(
+        "--protein_pdb_path", type=Path,
+        help="Path to PDB file of the protein to dock against using GNINA."
+    )
+    parser.add_argument(
+        "--autobox_ligand_path", type=Path,
+        help="Path to SDF file of the ligand to use for GNINA autoboxing."
+    )
+    parser.add_argument(
+        "--out_folder", type=Path,
+        help="Parent folder under which new folders will be created to store outputs per run",
+    )
+    parser.add_argument(
+        "--trained_model_folder", type=Path,
+        help="Path to folder containing trained model weights.",
+        default=Path("./models/")
+    )
+    parser.add_argument(
+        "--temp_folder", type=Path,
+        help="Parent folder under new folders will be created to store docked SDFs per run",
+        default=Path("./temp_dirs/")
+    )
+    parser.add_argument(
+        "--num_particles", type=int, default=100, 
+        help="No. of particles to use in the optimisation. More is better, but takes longer."
+    )
+    parser.add_argument(
+        "--num_epochs", type=int, default=10, 
+        help="No. of epochs to run the optimisation for. More is better, but takes longer"
+    )
+    parser.add_argument(
+        "--residues_of_interest",
+        nargs="+",
+        default=["VAL629", "ARG715", "TRP718", "THR555", "CYS675"],
+        help="Residues to check for interactions with the ligand."
+    )
+    parser.add_argument(
+        "--necessary_residues",
+        nargs="+",
+        default=["VAL629"],
+        help="Residues that MUST be present in the interactions with the ligand."
+    )
+    parser.add_argument(
+        "--docking_exhaustiveness", type=int, default=8, 
+        help="Exhaustiveness of GNINA docking. More is better, but takes longer"
+    )
+    parser.add_argument(
+        "--num_poses", type=int, default=5, 
+        help="No. of docked poses to generate & analyse. More is better, but takes longer"
+    )
+    parser.add_argument("--seed", type=int, default=1337)
+    parser.add_argument("--debug", action="store_true")
+    args = parser.parse_args()
+    optimise(args)
