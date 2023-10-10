@@ -2,6 +2,7 @@
 time_hash=$(date +%s)
 
 # RUN THIS FROM ROOT OF GITHUB REPO
+export TF_CPP_MIN_LOG_LEVEL=3
 
 # store STDOUT
 mkdir -p logs/
