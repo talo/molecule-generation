@@ -9,3 +9,5 @@ dependencies:
   - tensorflow
   - pip:
     - numpy
+    - plip
+    - alphaspace2
