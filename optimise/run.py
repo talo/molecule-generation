@@ -380,14 +380,14 @@ def optimise():
         num_poses=5,
         temp_dir=Path(f"/home/minhtoo/molecule-generation/temp_dirs/moler_oracle_temp_{run_name}_{time_hash}/")
     )
-    # TODO: add batched GNINA docking fn
+    # TODO: add batched GNINA docking fn, but need to refactor mso quite a lot
     scoring_functions = [ScoringFunction(func=dock_and_get_interactions_fn, name="interactions", is_mol_func=True)]
 
     out_dir = Path(f"/home/minhtoo/molecule-generation/results/{run_name}_{time_hash}/")
     model_dir = Path("/home/minhtoo/molecule-generation/models/")
     with load_model_from_directory(model_dir) as model:
         infer_model = MoLeRModel(model, scaffold, debug=True)
-        # TODO: possible to init with multiple smiles? need to refactor...
+
         opt = BasePSOptimizer.from_query(
             init_smiles=init_smiles,
             num_part=num_parts,
