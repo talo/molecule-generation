@@ -4,3 +4,8 @@ __pycache__/
 # Package installation:
 .eggs/
 *.egg-info/
+
+logs/
+notebooks/
+results/
+temp_dirs/
