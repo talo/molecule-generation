@@ -13,6 +13,8 @@ dependencies:
     - numpy
     # this won't work cuz openbabel is a wonderful piece of software
     # - openbabel
+    # but this works!
+    - pybel
     # this also wont work as it will check for pip-installed openbabel
     # instead, clone the plip repo from github, go to setup.py & comment out openbabel under install_requires,
     # then do python3 setup.py install, this will work as long as you already have openbabel working via a separate method (not pip)
