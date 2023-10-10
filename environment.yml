@@ -7,7 +7,14 @@ dependencies:
   - python=3.10
   - rdkit
   - tensorflow
+  # openbabel from conda + python bindings (separate) needed for plip
+  - openbabel
   - pip:
     - numpy
-    - plip
+    # this won't work cuz openbabel is a wonderful piece of software
+    # - openbabel
+    # this also wont work as it will check for pip-installed openbabel
+    # instead, clone the plip repo from github, go to setup.py & comment out openbabel under install_requires,
+    # then do python3 setup.py install, this will work as long as you already have openbabel working via a separate method (not pip)
+    # - plip
     - alphaspace2
