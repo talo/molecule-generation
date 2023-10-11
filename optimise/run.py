@@ -298,13 +298,14 @@ def dock_and_get_interactions(
         os.remove(prot_lig_pdb_path)
 
     # add list of interacting residues as property & update docked out SDF --> resave with float score in name too
-    best_pose.SetProp("residues", ",".join(sorted(list(best_residues), key=lambda x: int(x[3:]))))
+    best_residues_str = ",".join(sorted(list(best_residues), key=lambda x: int(x[3:])))
+    best_pose.SetProp("residues", best_residues_str)
     best_pose.SetProp("smiles", Chem.MolToSmiles(best_pose))
     best_pose_out_path = docked_poses_path.parent / f"best_score{best_pose_score:.4f}_pose{best_pose_idx}_{hash}.sdf"
     sdf_writer = Chem.SDWriter(str(best_pose_out_path))
     sdf_writer.write(best_pose)
     
-    return best_pose_score
+    return best_pose_score, best_residues_str
 
 
 class MoLeRModel:
@@ -345,15 +346,10 @@ def optimise(args):
 
     time_hash = int(time.time())
 
-    # run_name = "50particles_5rounds_test_v1"  # PRT1009303
-    # run_name = "100parts_10steps_5res_5poses_8exh_v1_PRT1008447"
-    # run_name = "100parts_10steps_5res_5poses_8exh_v1_top100PRTs"
     run_name = args.run_name
     num_parts = args.num_particles
-    # num_parts = 100
 
     # smiles & scaffold to initialise
-    # "CNC(=O)C1=C(NC2=CC=CC=C2OC)C=C(NC(=O)C2CC2)N=N1"
     scaffold = args.scaffold
 
     # read Prelude Excel file
@@ -364,24 +360,18 @@ def optimise(args):
     ref_smis = df["SMILES"].tolist()
     ref_smis = [smi.replace("|r|", "").strip() for smi in ref_smis]  # deal with artifacts in excel
     ref_smis = [smi for smi in ref_smis if len(smi) < 120]  # some SMILES are very long, we prolly dont want them for now
-    init_smiles = ref_smis[:num_parts]
-    # init_smiles = "CNC(=O)c1nnc(cc1Nc1cccc(c1OC)-c1ccc(nc1)C(=O)N(C)Cc1cc(ccn1)-c1ccncc1)NC(=O)C1CC1"  # PRT1009303
-    # init_smiles = "CNC(=O)c1nnc(cc1Nc1cccc(c1OC)-c1cnn(c1)C1CN(C1)Cc1ccccn1)NC(=O)C1CC1"  # PRT1008447
+    init_smiles = ref_smis[:args.num_top_smiles_to_init]
+    # canonicalize SMILES
+    init_smiles = [Chem.MolToSmiles(Chem.MolFromSmiles(smi)) for smi in init_smiles]
 
     # define oracle
-    protein_pdb_path = args.protein_pdb_path  
-    # Path("/home/minhtoo/molecule-generation/data/mutant_PRT1008596.align.fixed.addH.pdb")
-    autobox_ligand_path = args.autobox_ligand_path 
-    # Path("/home/minhtoo/molecule-generation/data/PRT1008596.sdf")
+    protein_pdb_path = args.protein_pdb_path
+    autobox_ligand_path = args.autobox_ligand_path
     dock_and_get_interactions_fn = partial(
         dock_and_get_interactions,
         protein_pdb_path=protein_pdb_path,
         autobox_ligand_path=autobox_ligand_path,
-        residues_of_interest=set(args.residues_of_interest),
-        # {
-        #    "VAL629", "ARG715", "TRP718", "THR555", "CYS675", 
-            # "LYS581", "GLN626", "LYS677", "SER698",
-        # },
+        residues_of_interest=set(args.residues_of_interest),  # "VAL629", "ARG715", "TRP718", "THR555", "CYS675"
         necessary_residues=set(args.necessary_residues), # {"VAL629"},
         exhaustiveness=args.docking_exhaustiveness,
         seed=args.seed,
@@ -392,7 +382,7 @@ def optimise(args):
     scoring_functions = [ScoringFunction(func=dock_and_get_interactions_fn, name="interactions", is_mol_func=True)]
 
     out_dir = args.out_folder / f"{run_name}_{time_hash}/"
-    model_dir = args.traine_model_folder  # Path("models/")
+    model_dir = args.trained_model_folder
     with load_model_from_directory(model_dir) as model:
         infer_model = MoLeRModel(model, scaffold, debug=True)
 
@@ -403,12 +393,12 @@ def optimise(args):
             inference_model=infer_model,
             scoring_functions=scoring_functions
         )
-        opt.run(10, num_track=100_000_000, out_dir=out_dir)
+        opt.run(args.num_epochs, num_track=100_000_000, out_dir=out_dir)
 
     logger.success('best solutions')
-    logger.success(opt.best_solutions)
+    logger.success(opt.best_solutions.head(100))
     logger.success('best fitness history')
-    logger.success(opt.best_fitness_history)
+    logger.success(opt.best_fitness_history.head(args.num_epochs))
 
 
 if __name__ == "__main__":
@@ -469,7 +459,13 @@ if __name__ == "__main__":
         "--num_poses", type=int, default=5, 
         help="No. of docked poses to generate & analyse. More is better, but takes longer"
     )
+    parser.add_argument("--num_top_smiles_to_init", type=int, default=10)
     parser.add_argument("--seed", type=int, default=1337)
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
+    assert args.num_top_smiles_to_init >= 1
+
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('max_colwidth', 10_000)
+
     optimise(args)
