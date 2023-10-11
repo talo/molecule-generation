@@ -28,11 +28,11 @@ NOTE: this assumes you already have GNINA working as a binary executable. please
 # run the scaffold-constrained optimisation
 Please first run `export TF_CPP_MIN_LOG_LEVEL=3` to silence tensorflow's bazillion error messages. 
 
-The entrypoint is at: `python3 optimise/run.py`. See `script/optimise.sh` & the python script itself for arguments.
+The entrypoint is at: `python3 optimise/run.py`. See `script/optimise_v2.sh` & the python script itself for arguments.
 
 Run with:
 ```bash
-bash script/optimise.sh
+bash script/optimise_v2.sh
 ```
 
 Modify the code & parameters as you desire.
@@ -43,15 +43,17 @@ With each epoch in the optimisation, the code will save several csv files into t
 ## scores
 The `best_solutions.csv` contains all SMILES generated during the entire run, with the residue interaction score, sorted from best SMILES at the top (1st row) in decreasing order.
 ```
-smiles,fitness
-COc1ccccc1Nc1cc(NC(=O)C2(CO)CC2)nnc1C(=O)NCc1ccc(-c2cc(C)c(Br)c(C)n2)nc1,0.7777777777777779
-Cc1ccc(-c2ccc(Nc3cc(NC(=O)C4CC4)nnc3C(=O)NCc3ccc(C)nc3C)c(OC(CO)C(=O)O)c2)cn1,0.7777777777777779
-O=C(NCc1ccc(-c2ccc(Br)cn2)nc1)c1nnc(NC(=O)C2CC2)cc1Nc1ccccc1OCCCCCCO,0.6666666666666665
-COc1ccccc1Nc1cc(NC(=O)C2(C)CC2)nnc1C(=O)NCc1cc(-c2cc(C)cc(C)n2)ccn1,0.6666666666666665
-COc1ccccc1Nc1cc(NC(=O)C2CC2)nnc1C(=O)NCc1cc(Oc2ccccn2)ccn1,0.6666666666666665
-COc1ccccc1Nc1cc(NC(=O)C2CC2)nnc1C(=O)NCc1cc(OCc2ccc(Br)cn2)ccn1,0.6666666666666665
-COc1ccccc1Nc1cc(NC(=O)C2(C)CC2)nnc1C(=O)NCc1ccc(-c2cc(C)cc(C)n2)cn1,0.6666666666666665
+smiles,fitness,residues
+COc1ccccc1Nc1cc(NC(=O)C2CC2C(=O)N(C)C)nnc1C(=O)NCc1ccc(C)nc1,0.2,"LEU551,ILE559,PHE628,VAL629,SER633,LYS677"
+COc1ccccc1Nc1cc(NC(=O)C2CC2)nnc1C(=O)NCc1cn(C)nc1-c1ccccn1,0.2,"LEU551,ILE559,LEU579,GLN626,GLU627,VAL629,SER633,LEU680"
+COc1ccccc1Nc1cc(NC(=O)C2CC2)nnc1C(=O)NCc1cn(C)nc1C(=O)N(C)Cc1cccnc1,0.2,"LEU551,ILE559,LEU579,VAL629,PHE631,SER633,LYS640,ASN641,LEU680"
 ```
+
+## interactive grid
+simply open `generated_smiles_and_fitnesses_grid.html` with a browser to look at the generated structures & fitnesses.
+if you hover over a molecule structure, you can see the SMILES + list of interacting residues (same info as the CSV above). 
+you can then select some of the molecules and export as CSV in the same HTML.
+
 
 ## docked SDFs
 
