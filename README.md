@@ -37,6 +37,9 @@ bash script/optimise_v2.sh
 
 Modify the code & parameters as you desire.
 
+## timings
+For 100 particles (mols) in 1 swarm, it takes about 1 hr to 1.5 hrs per epoch, depending on the GNINA settings & how complex & flexible the ligands are. Thus, for 10 epochs, it can take 10-15 hrs.
+
 # Outputs
 With each epoch in the optimisation, the code will save several csv files into the output folder. by default, this folder is `./results/{run_name}_{time_hash}`.
 
