@@ -10,6 +10,9 @@ dependencies:
   # openbabel from conda + python bindings (separate) needed for plip
   - openbabel
   - pip:
+    # fetch our talo fork of MSO, main branch, latest commit
+    - mso:
+      - git+https://github.com/talo/molecule-generation.git@main
     - numpy
     # this won't work cuz openbabel is a wonderful piece of software
     # - openbabel
@@ -25,3 +28,5 @@ dependencies:
     - pandas
     # to read prelude excel file with pandas
     - openpyxl
+    # to visualize generated mols as a grid
+    - mols2grid
