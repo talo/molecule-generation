@@ -27,6 +27,8 @@ from mso.objectives.scoring import ScoringFunction
 RDKitMol = Any
 PybelMol = Any
 Score = float
+Residues = str
+Hash = str
 
 
 def check_valid_mol(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -227,7 +229,7 @@ def dock_and_get_interactions(
     num_poses: int = 10,
     temp_dir: Path = Path("./moler_oracle_temp/"),
     debug: bool = False
-) -> Score:
+) -> tuple[Score, Residues, Hash]:
     assert len(residues_of_interest) > 0
     assert len(necessary_residues) > 0
     assert len(necessary_residues & residues_of_interest) == len(necessary_residues)
@@ -305,7 +307,7 @@ def dock_and_get_interactions(
     sdf_writer = Chem.SDWriter(str(best_pose_out_path))
     sdf_writer.write(best_pose)
     
-    return best_pose_score, best_residues_str
+    return best_pose_score, best_residues_str, hash
 
 
 class MoLeRModel:
