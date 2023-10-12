@@ -279,7 +279,11 @@ def dock_and_get_interactions(
         # analyse with PLIP
         # https://projects.volkamerlab.org/teachopencadd/talktorials/T016_protein_ligand_interactions.html
         # Profiling-protein-ligand-interactions-using-PLIP
-        inters_to_residues = retrieve_plip_interactions(prot_lig_pdb_path)
+        try:
+            inters_to_residues = retrieve_plip_interactions(prot_lig_pdb_path)
+        except:
+            inters_to_residues = {}
+            
         all_residues = set()
         for inter_type, residues in inters_to_residues.items():
             residues_set = {f"{res[1]}{res[0]}" for res in residues[1:]}
@@ -362,9 +366,9 @@ def optimise(args):
     ref_smis = df["SMILES"].tolist()
     ref_smis = [smi.replace("|r|", "").strip() for smi in ref_smis]  # deal with artifacts in excel
     ref_smis = [smi for smi in ref_smis if len(smi) < 120]  # some SMILES are very long, we prolly dont want them for now
-    init_smiles = ref_smis[:args.num_top_smiles_to_init]
+    init_smiles = list(set(Chem.MolToSmiles(Chem.MolFromSmiles(smi)) for smi in ref_smis))
     # canonicalize SMILES
-    init_smiles = [Chem.MolToSmiles(Chem.MolFromSmiles(smi)) for smi in init_smiles]
+    init_smiles = init_smiles[:args.num_top_smiles_to_init]
 
     # define oracle
     protein_pdb_path = args.protein_pdb_path
@@ -398,9 +402,9 @@ def optimise(args):
         opt.run(args.num_epochs, num_track=100_000_000, out_dir=out_dir)
 
     logger.success('best solutions')
-    logger.success(opt.best_solutions.head(100))
+    logger.success(f"\n{opt.best_solutions.head(100)}")
     logger.success('best fitness history')
-    logger.success(opt.best_fitness_history.head(args.num_epochs))
+    logger.success(f"\n{opt.best_fitness_history.head(args.num_epochs)}")
 
 
 if __name__ == "__main__":
@@ -469,5 +473,6 @@ if __name__ == "__main__":
 
     pd.set_option('display.expand_frame_repr', False)
     pd.set_option('max_colwidth', 10_000)
-
+    pd.set_option('display.max_rows', None)
+    
     optimise(args)
