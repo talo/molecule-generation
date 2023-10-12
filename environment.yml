@@ -11,8 +11,7 @@ dependencies:
   - openbabel
   - pip:
     # fetch our talo fork of MSO, master branch, latest commit
-    - mso:
-      - git+https://github.com/talo/mso.git@master
+    - git+https://github.com/talo/mso.git@master
     - numpy
     # this won't work cuz openbabel is a wonderful piece of software
     # - openbabel
