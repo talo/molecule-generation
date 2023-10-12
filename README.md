@@ -12,7 +12,7 @@ rm -rf ~/miniconda3/miniconda.sh
 ```bash
 # use either conda or miniconda, both work
 conda env create -f environment.yml
-conda activate moler-env
+conda activate moler_qdx
 pip install molecule-generation
 
 # install plip
