@@ -30,11 +30,11 @@ NOTE: this assumes you already have GNINA working as a binary executable. please
 # run the scaffold-constrained optimisation
 Please first run `export TF_CPP_MIN_LOG_LEVEL=3` to silence tensorflow's bazillion error messages. 
 
-The entrypoint is at: `python3 optimise/run.py`. See `script/optimise_v2.sh` & the python script itself for arguments.
+The entrypoint is at: `python3 optimise/run.py`. See `script/optimise_v3.sh` & the python script itself for arguments.
 
 Run with:
 ```bash
-bash script/optimise_v2.sh
+bash script/optimise_v3.sh
 ```
 
 Modify the code & parameters as you desire.

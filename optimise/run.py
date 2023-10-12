@@ -307,9 +307,12 @@ def dock_and_get_interactions(
     best_residues_str = ",".join(sorted(list(best_residues), key=lambda x: int(x[3:])))
     best_pose.SetProp("residues", best_residues_str)
     best_pose.SetProp("smiles", Chem.MolToSmiles(best_pose))
+    best_pose_with_Hs = pybel_add_Hs_to_rdkit_mol(best_pose)
+
+    # save to SDF, with Hs
     best_pose_out_path = docked_poses_path.parent / f"best_score{best_pose_score:.4f}_pose{best_pose_idx}_{hash}.sdf"
     sdf_writer = Chem.SDWriter(str(best_pose_out_path))
-    sdf_writer.write(best_pose)
+    sdf_writer.write(best_pose_with_Hs)
     
     return best_pose_score, best_residues_str, hash
 
