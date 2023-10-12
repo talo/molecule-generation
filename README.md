@@ -55,14 +55,12 @@ COc1ccccc1Nc1cc(NC(=O)C2CC2)nnc1C(=O)NCc1cn(C)nc1C(=O)N(C)Cc1cccnc1,0.2,"LEU551,
 ```
 
 ## interactive grid
-simply open `generated_smiles_and_fitnesses_grid.html` with a browser to look at the generated structures & fitnesses.
-if you hover over a molecule structure, you can see the SMILES + list of interacting residues (same info as the CSV above). 
-you can then select some of the molecules and export as CSV in the same HTML.
+simply open `generated_smiles_and_fitnesses_grid.html` in the folder `./results/{run_name}_{time_hash}` with a browser to look at the generated structures & fitnesses. if you hover over a molecule structure, you can see the SMILES + list of interacting residues (same info as the CSV above). you can then select some of the molecules and export as CSV in the same HTML.
 
 
 ## docked SDFs
 
-At the same time, the code will also save all the GNINA docked ligand SDFs into the temp dir, by default it is `./temp_dirs/moler_oracle_temp_{run_name}_{time_hash}`. in this folder, you will see SDFs named `best_score{score}_pose{pose}_{hash}.sdf`. 
+At the same time, the code will also save all the GNINA docked ligand SDFs into the folder `docked_poses` under `./results/{run_name}_{time_hash}`. in this folder, you will see SDFs named `best_score{score}_pose{pose}_{hash}.sdf`. 
 
 The score is the residue interaction score ranging from 0 (worst) to 1 (best). Pose is the pose index that gave the best score (and corresponds to the conformer inside this SDF). Hash is just a random hash.
 

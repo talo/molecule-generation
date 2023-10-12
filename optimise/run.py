@@ -354,6 +354,7 @@ def optimise(args):
 
     run_name = args.run_name
     num_parts = args.num_particles
+    out_dir = args.out_folder / f"{run_name}_{time_hash}/"
 
     # smiles & scaffold to initialise
     scaffold = args.scaffold
@@ -382,12 +383,11 @@ def optimise(args):
         exhaustiveness=args.docking_exhaustiveness,
         seed=args.seed,
         num_poses=args.num_poses,
-        temp_dir=args.temp_folder / f"moler_oracle_temp_{run_name}_{time_hash}"
+        temp_dir=out_dir / f"docked_poses"
     )
     # TODO: add batched GNINA docking fn, but need to refactor mso quite a lot
     scoring_functions = [ScoringFunction(func=dock_and_get_interactions_fn, name="interactions", is_mol_func=True)]
 
-    out_dir = args.out_folder / f"{run_name}_{time_hash}/"
     model_dir = args.trained_model_folder
     with load_model_from_directory(model_dir) as model:
         infer_model = MoLeRModel(model, scaffold, debug=True)
@@ -431,11 +431,6 @@ if __name__ == "__main__":
         "--trained_model_folder", type=Path,
         help="Path to folder containing trained model weights.",
         default=Path("./models/")
-    )
-    parser.add_argument(
-        "--temp_folder", type=Path,
-        help="Parent folder under new folders will be created to store docked SDFs per run",
-        default=Path("./temp_dirs/")
     )
     parser.add_argument(
         "--num_particles", type=int, default=100, 
