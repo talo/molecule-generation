@@ -1,4 +1,4 @@
-name: moler-env
+name: moler_qdx
 channels:
   - rdkit
   - conda-forge
@@ -10,9 +10,9 @@ dependencies:
   # openbabel from conda + python bindings (separate) needed for plip
   - openbabel
   - pip:
-    # fetch our talo fork of MSO, main branch, latest commit
+    # fetch our talo fork of MSO, master branch, latest commit
     - mso:
-      - git+https://github.com/talo/molecule-generation.git@main
+      - git+https://github.com/talo/mso.git@master
     - numpy
     # this won't work cuz openbabel is a wonderful piece of software
     # - openbabel
