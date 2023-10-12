@@ -13,7 +13,9 @@ rm -rf ~/miniconda3/miniconda.sh
 # use either conda or miniconda, both work
 conda env create -f environment.yml
 conda activate moler_qdx
-pip install molecule-generation
+
+# install the code in this repo, will need to re-run this whenever we make changes to the code in this repo
+pip install -e .
 
 # install plip
 git clone https://github.com/pharmai/plip.git
